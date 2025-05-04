@@ -1,14 +1,15 @@
 
 import { MemberData } from "../models/MemberData";
 
-// This is a simple in-memory storage for now
-// In a real application, this would connect to a backend service
-let members: MemberData[] = [];
+// هذا تخزين بسيط في الذاكرة حاليًا
+// في تطبيق حقيقي، سيكون هناك اتصال بخدمة خلفية
 const STORAGE_KEY = "watan_youth_members";
 
-// Initialize from local storage
-const initializeFromStorage = (): void => {
+// التهيئة من التخزين المحلي - دائمًا تحديث من التخزين
+export const getAllMembers = (): MemberData[] => {
   const stored = localStorage.getItem(STORAGE_KEY);
+  let members: MemberData[] = [];
+  
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
@@ -17,66 +18,62 @@ const initializeFromStorage = (): void => {
         timestamp: item.timestamp ? new Date(item.timestamp) : new Date()
       }));
     } catch (error) {
-      console.error("Failed to parse stored members", error);
+      console.error("خطأ في تحليل الأعضاء المخزنين", error);
       members = [];
     }
   }
+  
+  return members;
 };
 
-// Save to local storage
-const saveToStorage = (): void => {
+// حفظ في التخزين المحلي
+const saveToStorage = (members: MemberData[]): void => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(members));
 };
 
-// Get all members
-export const getAllMembers = (): MemberData[] => {
-  initializeFromStorage();
-  return [...members];
-};
-
-// Add a new member
+// إضافة عضو جديد
 export const addMember = (member: Omit<MemberData, "id" | "timestamp">): MemberData => {
-  initializeFromStorage();
+  const members = getAllMembers(); // دائمًا الحصول على أحدث البيانات
   
   const newMember: MemberData = {
     ...member,
-    id: Date.now().toString(), // Simple ID generation
+    id: Date.now().toString(), // توليد بسيط للمعرّف
     timestamp: new Date()
   };
   
-  members = [...members, newMember];
-  saveToStorage();
+  const updatedMembers = [...members, newMember];
+  saveToStorage(updatedMembers);
   
   return newMember;
 };
 
-// Delete a member by ID
+// حذف عضو حسب المعرّف
 export const deleteMember = (id: string): boolean => {
-  initializeFromStorage();
+  const members = getAllMembers(); // دائمًا الحصول على أحدث البيانات
   
   const initialLength = members.length;
-  members = members.filter(member => member.id !== id);
+  const updatedMembers = members.filter(member => member.id !== id);
   
-  if (members.length !== initialLength) {
-    saveToStorage();
+  if (updatedMembers.length !== initialLength) {
+    saveToStorage(updatedMembers);
     return true;
   }
   
   return false;
 };
 
-// Export members to CSV format
+// تصدير الأعضاء إلى تنسيق CSV
 export const exportToCSV = (): string => {
-  initializeFromStorage();
+  const members = getAllMembers(); // دائمًا الحصول على أحدث البيانات
   
   if (members.length === 0) {
     return "لا توجد بيانات للتصدير";
   }
   
-  // CSV Header
+  // رأس CSV
   let csv = "الاسم,الرقم القومي,رقم التليفون,النوع,الصفة,التاريخ\n";
   
-  // Add rows
+  // إضافة صفوف
   members.forEach((member) => {
     const gender = member.gender === 'male' ? 'ذكر' : 'أنثى';
     const date = member.timestamp instanceof Date 
@@ -89,10 +86,10 @@ export const exportToCSV = (): string => {
   return csv;
 };
 
-// Function to download the CSV file
+// وظيفة لتنزيل ملف CSV
 export const downloadCSV = (): void => {
   const csv = exportToCSV();
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); // Add BOM for proper Arabic encoding
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); // إضافة BOM للترميز العربي الصحيح
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   

@@ -13,21 +13,34 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
-import { Download, Search, Trash } from "lucide-react";
+import { Download, Search, Trash, LogOut } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { motion } from "framer-motion";
+import AdminLogin from "@/components/AdminLogin";
+import { isAuthenticated, logout } from "@/services/authService";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
-  // State for members data and search/filter
+  // حالة التوثيق
+  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+  const navigate = useNavigate();
+  
+  // حالة البيانات والبحث
   const [members, setMembers] = useState<MemberData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load members data
+  // تحميل بيانات الأعضاء
   useEffect(() => {
     document.title = "لوحة الإدارة - حزب مستقبل وطن";
-    loadMembers();
-  }, []);
+    if (isLoggedIn) {
+      loadMembers();
+      
+      // تحديث البيانات كل 30 ثانية للتأكد من أن البيانات محدثة من جميع الأجهزة
+      const intervalId = setInterval(loadMembers, 30000);
+      return () => clearInterval(intervalId);
+    }
+  }, [isLoggedIn]);
 
   const loadMembers = () => {
     try {
@@ -42,15 +55,22 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handle member deletion
+  // التعامل مع تسجيل الخروج
+  const handleLogout = () => {
+    logout();
+    setIsLoggedIn(false);
+    toast.success("تم تسجيل الخروج بنجاح");
+  };
+
+  // التعامل مع حذف عضو
   const handleDeleteMember = (id: string) => {
     try {
-      // In a real app you would call an API here
-      // For now we'll just filter the array
+      // في تطبيق حقيقي ستقوم بالاتصال بخادم هنا
+      // حالياً سنقوم بتصفية المصفوفة فقط
       const updatedMembers = members.filter(member => member.id !== id);
       setMembers(updatedMembers);
       
-      // Update local storage (simulating database)
+      // تحديث التخزين المحلي (محاكاة قاعدة البيانات)
       localStorage.setItem("watan_youth_members", JSON.stringify(updatedMembers));
       
       toast.success("تم حذف العضو بنجاح");
@@ -60,7 +80,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Filter members based on search term
+  // تصفية الأعضاء بناءً على مصطلح البحث
   const filteredMembers = members.filter(member => 
     member.name.includes(searchTerm) || 
     member.nationalId.includes(searchTerm) ||
@@ -68,9 +88,14 @@ const AdminDashboard = () => {
     member.position.includes(searchTerm)
   );
 
+  // إذا لم يكن المستخدم مسجل الدخول، عرض نموذج تسجيل الدخول
+  if (!isLoggedIn) {
+    return <AdminLogin onLogin={() => setIsLoggedIn(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header with Logo */}
+      {/* رأس الصفحة مع الشعار */}
       <div className="w-full bg-white py-6 shadow-md mb-8 flex justify-center">
         <div className="relative h-32 w-32">
           <img
@@ -88,7 +113,26 @@ const AdminDashboard = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl font-bold text-party-darkblue mb-2">لوحة الإدارة</h1>
+          <div className="flex justify-between items-center mb-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/")} 
+              className="text-party-blue hover:bg-blue-50"
+            >
+              العودة إلى صفحة التسجيل
+            </Button>
+            
+            <h1 className="text-3xl font-bold text-party-darkblue">لوحة الإدارة</h1>
+            
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout} 
+              className="text-red-500 hover:bg-red-50 hover:text-red-600 flex gap-2 items-center"
+            >
+              <LogOut size={16} />
+              تسجيل الخروج
+            </Button>
+          </div>
           <h2 className="text-xl text-gray-600">أمانة الشباب – قسم منتزة أول</h2>
         </motion.div>
         
