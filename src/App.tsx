@@ -15,9 +15,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const queryClient = new QueryClient();
 
-// Add framer-motion
-<lov-add-dependency>framer-motion@latest</lov-add-dependency>
-
 const App = () => {
   // Set default document direction for Arabic support
   useEffect(() => {

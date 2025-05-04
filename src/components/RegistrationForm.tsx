@@ -53,8 +53,17 @@ const RegistrationForm = () => {
 
   const onSubmit = (values: FormValues) => {
     try {
+      // Ensure all required fields are present for the addMember function
+      const memberData = {
+        name: values.name,
+        nationalId: values.nationalId,
+        phone: values.phone,
+        gender: values.gender,
+        position: values.position
+      };
+      
       // Add the member to our service
-      addMember(values);
+      addMember(memberData);
       
       // Show success message
       toast({
