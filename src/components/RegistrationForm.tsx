@@ -1,53 +1,67 @@
 
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
+import { useState } from "react";
+import { FormValues, formSchema } from "@/features/registration/schema";
 import { addMember } from "@/services/membersService";
-import { formSchema, FormValues } from "@/features/registration/schema";
 import { RegistrationFormCard } from "@/features/registration/components/RegistrationFormCard";
 
 const RegistrationForm = () => {
-  const { toast } = useToast();
-  
-  // Initialize the form with react-hook-form
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize form with zod resolver
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       nationalId: "",
       phone: "",
-      gender: "male",
+      gender: undefined,
       position: "",
     },
   });
 
+  // Form submission handler
   const onSubmit = (values: FormValues) => {
+    setIsSubmitting(true);
     try {
-      // Add the member to our service
-      addMember(values);
-      
-      // Show success message
-      toast({
-        title: "تم التسجيل بنجاح",
-        description: "تم حفظ بيانات العضو",
-        variant: "default",
+      // Make sure gender is defined (typescript check)
+      if (!values.gender) {
+        throw new Error("يرجى اختيار النوع");
+      }
+
+      // Add member to our service/database
+      addMember({
+        name: values.name,
+        nationalId: values.nationalId,
+        phone: values.phone,
+        gender: values.gender,
+        position: values.position
       });
-      
-      // Reset the form
+
+      // Reset form after successful submission
       form.reset();
+
+      // Show success message
+      toast.success("تم تسجيل البيانات بنجاح!", {
+        description: "شكراً لك على التسجيل"
+      });
       
     } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "خطأ في التسجيل",
-        description: "حدث خطأ أثناء تسجيل البيانات. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
+      console.error("Error submitting form:", error);
+      toast.error("حدث خطأ أثناء تسجيل البيانات", {
+        description: "يرجى المحاولة مرة أخرى"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return <RegistrationFormCard form={form} onSubmit={onSubmit} />;
+  return (
+    <RegistrationFormCard form={form} onSubmit={onSubmit} />
+  );
 };
 
 export default RegistrationForm;

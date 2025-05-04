@@ -50,6 +50,21 @@ export const addMember = (member: Omit<MemberData, "id" | "timestamp">): MemberD
   return newMember;
 };
 
+// Delete a member by ID
+export const deleteMember = (id: string): boolean => {
+  initializeFromStorage();
+  
+  const initialLength = members.length;
+  members = members.filter(member => member.id !== id);
+  
+  if (members.length !== initialLength) {
+    saveToStorage();
+    return true;
+  }
+  
+  return false;
+};
+
 // Export members to CSV format
 export const exportToCSV = (): string => {
   initializeFromStorage();
