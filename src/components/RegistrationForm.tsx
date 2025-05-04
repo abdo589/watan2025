@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -28,10 +27,13 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const positions = [
+  "أمين الشباب",
+  "أمين مساعد",
+  "عضو هيئة مكتب",
+  "عضو",
   "عضو لجنة",
   "منسق شباب",
   "مسؤول لجنة",
-  "أمين شباب",
   "أخرى"
 ];
 
